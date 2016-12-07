@@ -1,3 +1,7 @@
+- flash && flash.each do |key, value|
+  .alert{class: flash_alert_class(key)}
+    %a.close{href: '#', :'data-dismiss' => "alert"} &times;
+    = value
 #rails_admin_nestable
   - if [false, :only].exclude?(@options[:live_update])
     .form-group
@@ -10,10 +14,11 @@
       %ol.dd-list
         = nested_tree_nodes @tree_nodes
   - if @options[:live_update] != :only
-    .form-group
-      %button.btn.btn-primary{ type: 'submit' }
-        %i.icon-white.icon-ok
-        = t('admin.actions.nestable.update')
+    .form-group.form-actions
+      .col-sm-offset-2.col-sm-10
+        %button.btn.btn-primary{ type: 'submit' }
+          %i.icon-white.icon-ok
+          = t('admin.actions.nestable.update')
 
 = stylesheet_link_tag    'rails_admin/rails_admin_nestable'
 = javascript_include_tag 'rails_admin/jquery.nestable'
