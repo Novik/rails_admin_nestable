@@ -11,7 +11,9 @@
         = nested_tree_nodes @tree_nodes
   - if @options[:live_update] != :only
     .form-group
-      %button.btn.btn-primary{ type: 'submit' }= t('admin.actions.nestable.update')
+      %button.btn.btn-primary{ type: 'submit' }
+        %i.icon-white.icon-ok
+        = t('admin.actions.nestable.update')
 
 = stylesheet_link_tag    'rails_admin/rails_admin_nestable'
 = javascript_include_tag 'rails_admin/jquery.nestable'

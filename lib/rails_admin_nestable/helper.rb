@@ -8,8 +8,11 @@ module RailsAdminNestable
 
           output = content_tag :div, 'drag', class: 'dd-handle dd3-handle'
           output += content_tag :div, class: 'dd3-content' do
-            content = link_to object_label(tree_node), edit_path(@abstract_model, tree_node.id)
-            content += content_tag :div, action_links(tree_node), class: 'pull-right links'
+            content = link_to edit_path(@abstract_model, tree_node.id) do
+              content_tag( :span, '', class: object_class(tree_node) )+
+                object_label(tree_node)
+            end
+            content += content_tag :div, action_links(tree_node), class: 'pull-right links', :'data-id' => tree_node.id
           end
 
           output+= content_tag :ol, nested_tree_nodes(sub_tree_nodes), class: 'dd-list' if sub_tree_nodes && sub_tree_nodes.any?
@@ -26,6 +29,20 @@ module RailsAdminNestable
 
     def tree_max_depth
       @nestable_conf.options[:max_depth] || 'false'
+    end
+
+    def object_class(tree_node)
+      custom_object_class = @nestable_conf.options[:object_class]
+      return '' unless custom_object_class.present?
+
+      case custom_object_class
+      when Symbol
+        tree_node.public_send(custom_object_class)
+      when proc { custom_object_class.respond_to? :call }
+        custom_object_class.call(tree_node)
+      else
+        fail 'object_class must be a Symbol or a Proc'
+      end
     end
 
     def object_label(tree_node)

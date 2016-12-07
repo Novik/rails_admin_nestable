@@ -23,7 +23,7 @@ module RailsAdmin
         register_instance_option :controller do
           Proc.new do |klass|
             @nestable_conf = ::RailsAdminNestable::Configuration.new @abstract_model
-            @position_field = @nestable_conf.options[:position_field].to_s.split('.').last
+            @position_field = @nestable_conf.options[:position_field]
             @enable_callback = @nestable_conf.options[:enable_callback]
             @nestable_scope = @nestable_conf.options[:scope]
             @options = @nestable_conf.options
@@ -57,37 +57,39 @@ module RailsAdmin
 
                 ActiveRecord::Base.transaction { update.call } if @adapter == :active_record
                 update.call if @adapter == :mongoid
-
-                message = "<strong>#{I18n.t('admin.actions.nestable.success')}!</strong>"
               rescue Exception => e
-                message = "<strong>#{I18n.t('admin.actions.nestable.error')}</strong>: #{e}"
               end
-
-              render text: message
             end
 
-            if request.get?
-              query = list_entries(@model_config, :nestable, false, false).reorder(nil)
+            query = list_entries(@model_config, :nestable, false, false).reorder(nil)
 
-              case @options[:scope].class.to_s
-                when 'Proc'
-                  query.merge!(@options[:scope].call)
-                when 'Symbol'
-                  query.merge!(@abstract_model.model.public_send(@options[:scope]))
+            case @options[:scope].class.to_s
+              when 'Proc'
+                query.merge!(@options[:scope].call)
+              when 'Symbol'
+                query.merge!(@abstract_model.model.public_send(@options[:scope]))
+            end
+
+            if @nestable_conf.tree?
+              @tree_nodes = if @options[:position_field].present?
+                query.arrange(order: @options[:position_field])
+              else
+                query.arrange
+              end
+            end
+
+            if @nestable_conf.list?
+              @tree_nodes = query.order("#{@options[:position_field]} ASC")
+            end
+
+	    if request.post? && params['tree_nodes'].present?
+	      output = {}
+	      query.each do |tree_node|
+	        output[tree_node.id] = "<ul class='inline list-inline'>#{menu_for( :member, @abstract_model, tree_node, true ).to_s.html_safe}</ul>"
               end
 
-              if @nestable_conf.tree?
-                @tree_nodes = if @options[:position_field].present?
-                  query.arrange(order: @options[:position_field])
-                else
-                  query.arrange
-                end
-              end
-
-              if @nestable_conf.list?
-                @tree_nodes = query.order("#{@options[:position_field]} ASC")
-              end
-
+	      render json: output.to_json, root: false
+	    else
               render action: @action.template_name
             end
           end
