@@ -2,7 +2,7 @@ module RailsAdminNestable
   module Helper
     def nested_tree_nodes(tree_nodes = [])
       tree_nodes.map do |tree_node, sub_tree_nodes|
-        li_classes = 'dd-item dd3-item'
+        li_classes = "dd-item dd3-item #{object_global_class(tree_node)}"
 
         content_tag :li, class: li_classes, :'data-id' => tree_node.id do
 
@@ -33,6 +33,20 @@ module RailsAdminNestable
 
     def object_class(tree_node)
       custom_object_class = @nestable_conf.options[:object_class]
+      return '' unless custom_object_class.present?
+
+      case custom_object_class
+      when Symbol
+        tree_node.public_send(custom_object_class)
+      when proc { custom_object_class.respond_to? :call }
+        custom_object_class.call(tree_node)
+      else
+        fail 'object_class must be a Symbol or a Proc'
+      end
+    end
+
+    def object_global_class(tree_node)
+      custom_object_class = @nestable_conf.options[:object_global_class]
       return '' unless custom_object_class.present?
 
       case custom_object_class
